@@ -1,20 +1,28 @@
-import { Box, Stack, Typography, Card, CardContent } from '@mui/material';
+'use client'; // Ensures that this component is client-side
 
-const items = [
-  'tomato',
-  'celery',
-  'cucumber',
-  'meat',
-  'sausage',
-  'apples',
-  'bananas',
-  'walnuts',
-  'almonds',
-  'donut',
-];
+import { Box, Stack, Typography, Card, CardContent } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query } from 'firebase/firestore';
+import { firestore } from '../firebase'; // Adjust path based on your file structure
 
 export default function Home() {
 
+  const [pantry,setPantry]=useState([]);
+  useEffect( () => {
+    const updatePantry = async () => {
+    const snapshot= query(collection(firestore, 'pantry'));
+    const docs= await getDocs(snapshot);
+    const pantryList=[];
+    docs.forEach((doc) => {
+      pantryList.push(doc.id)
+ 
+    })
+    console.log(pantryList);
+    setPantry(pantryList);
+  }
+
+  updatePantry()
+  }, []);
   return (
     <Box
       width="100vw"
@@ -52,7 +60,7 @@ export default function Home() {
         p={2}
       >
         <Stack spacing={2}>
-          {items.map((item) => (
+          {pantry.map((item) => (
             <Card
               key={item}
               sx={{
