@@ -1,28 +1,83 @@
-'use client'; // Ensures that this component is client-side
+'use client'; // Asegura que este componente se renderice en el lado del cliente
 
-import { Box, Stack, Typography, Card, CardContent } from '@mui/material';
+// Importa componentes de Material UI y React
+import { Box, Stack, Typography, Card, CardContent, Button, Modal, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { firestore } from '../firebase'; // Adjust path based on your file structure
 
+// Importa funciones de Firebase que permiten al usuario interactuar con los datos de Firebase
+import { collection, getDocs, query, doc, setDoc } from 'firebase/firestore';
+import { firestore } from '../firebase'; // Ajusta la ruta según la estructura de tu archivo
+
+// Componente Home
 export default function Home() {
 
-  const [pantry,setPantry]=useState([]);
-  useEffect( () => {
-    const updatePantry = async () => {
-    const snapshot= query(collection(firestore, 'pantry'));
-    const docs= await getDocs(snapshot);
-    const pantryList=[];
-    docs.forEach((doc) => {
-      pantryList.push(doc.id)
- 
-    })
-    console.log(pantryList);
-    setPantry(pantryList);
-  }
+  // Estado para mantener la lista de artículos de la despensa obtenidos de Firestore
+  const [pantry, setPantry] = useState([]);
 
-  updatePantry()
+  // Estado para controlar la apertura/cierre del Modal
+  const [open, setOpen] = useState(false);
+
+  // Estado para manejar el valor del nuevo item a añadir
+  const [newItem, setNewItem] = useState('');
+
+  // Función para manejar la apertura del modal
+  const handleOpen = () => setOpen(true);
+
+  // Función para manejar el cierre del modal
+  const handleClose = () => setOpen(false);
+
+  // Función para actualizar el estado `newItem` con el valor del campo de texto
+  const handleInputChange = (event) => {
+    setNewItem(event.target.value);
+  };
+
+  // Objeto de estilo para el contenido del Modal
+  const style = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    border: '2px solid #000',
+    boxShadow: 24,
+    p: 4,
+    display: "box",
+    gap: 3,
+  };
+
+  // Función para obtener los datos de la despensa desde Firestore
+  const updatePantry = async () => {
+    try {
+      const snapshot = query(collection(firestore, 'pantry'));
+      const docs = await getDocs(snapshot);
+      const pantryList = [];
+      docs.forEach((doc) => {
+        pantryList.push(doc.id);
+      });
+      setPantry(pantryList);
+    } catch (error) {
+      console.error('Error updating pantry:', error);
+    }
+  };
+
+  // useEffect para obtener los datos de la despensa cuando se monta el componente
+  useEffect(() => {
+    updatePantry();
   }, []);
+
+  // Función para añadir un nuevo item a la colección 'pantry' en Firestore
+  const addItem = async (item) => {
+    try {
+      const itemRef = doc(collection(firestore, 'pantry'), item);
+      await setDoc(itemRef, { exists: true }); // Puedes ajustar los datos como lo necesites
+      updatePantry(); // Actualiza la lista de despensa después de añadir el nuevo item
+      handleClose(); // Cierra el modal después de añadir el item
+    } catch (error) {
+      console.error('Error adding item:', error);
+    }
+  };
+
   return (
     <Box
       width="100vw"
@@ -31,8 +86,34 @@ export default function Home() {
       justifyContent="center"
       alignItems="center"
       flexDirection="column"
-      bgcolor="#e0f7fa" // Light blue background for the whole page
+      bgcolor="#e0f7fa" // Fondo azul claro para toda la página
     >
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Add item
+          </Typography>
+          <Stack width="100%" direction="row" spacing={2}>
+            <TextField 
+              id="outlined-basic" 
+              label="Item" 
+              variant="outlined" 
+              fullWidth 
+              value={newItem} 
+              onChange={handleInputChange}
+            />
+            <Button variant="contained" onClick={() => addItem(newItem)}> 
+              Add 
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
+
       <Box
         width="80%"
         maxWidth="800px"
@@ -41,8 +122,8 @@ export default function Home() {
         display="flex"
         justifyContent="center"
         alignItems="center"
-        bgcolor="#00796b" // Darker background for the header
-        borderRadius={2} // Rounded corners for the header
+        bgcolor="#00796b" // Fondo más oscuro para el encabezado
+        borderRadius={2} // Bordes redondeados para el encabezado
       >
         <Typography variant="h1" component="h1" color="white" gutterBottom>
           Pantry Tracker
@@ -52,7 +133,7 @@ export default function Home() {
       <Box
         width="80%"
         maxWidth="800px"
-        height="500px"
+        height="400px"
         overflow="auto"
         border="1px solid #00796b"
         borderRadius={2}
@@ -73,7 +154,7 @@ export default function Home() {
                 boxShadow: 2,
                 borderRadius: 2,
                 '&:hover': {
-                  bgcolor: '#004d40', // Darker color on hover
+                  bgcolor: '#004d40', // Color más oscuro al pasar el cursor
                   color: 'white',
                 },
               }}
@@ -91,6 +172,11 @@ export default function Home() {
           ))}
         </Stack>
       </Box>
+
+      <Button variant="contained" color="primary" onClick={handleOpen}>
+        Add Item
+      </Button>
+
     </Box>
   );
 }
