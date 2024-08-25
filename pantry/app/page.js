@@ -3,9 +3,11 @@
 // Importa componentes de Material UI y React
 import { Box, Stack, Typography, Card, CardContent, Button, Modal, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 // Importa funciones de Firebase que permiten al usuario interactuar con los datos de Firebase
-import { collection, getDocs, query, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../firebase'; // Ajusta la ruta según la estructura de tu archivo
 
 // Componente Home
@@ -78,6 +80,24 @@ export default function Home() {
     }
   };
 
+  // Función para eliminar un item de la colección 'pantry' en Firestore
+  const removeItem = async (item) => {
+
+    const confirmed= window.confirm("Are you sure you want to delete this item?");
+
+    if(confirmed)
+    {
+    try {
+      const itemRef = doc(collection(firestore, 'pantry'), item);
+
+      await deleteDoc(itemRef);
+      updatePantry(); // Actualiza la lista de despensa después de eliminar el item
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
+  }
+  };
+
   return (
     <Box
       width="100vw"
@@ -146,29 +166,39 @@ export default function Home() {
               key={item}
               sx={{
                 display: 'flex',
-                justifyContent: 'center',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 height: 100,
                 bgcolor: 'white',
                 border: '1px solid #00796b',
                 boxShadow: 2,
                 borderRadius: 2,
+                padding: 2,
                 '&:hover': {
                   bgcolor: '#004d40', // Color más oscuro al pasar el cursor
                   color: 'white',
                 },
               }}
             >
-              <CardContent>
-                <Typography
-                  variant="h4"
-                  textAlign="center"
-                  fontWeight="bold"
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+              >
+                {item.charAt(0).toUpperCase() + item.slice(1)}
+              </Typography>
+
+              <IconButton
+                  onClick={() => removeItem(item)}
+                  sx={{
+                    color: 'red', // Default color of the icon
+                    '&:hover': {
+                      color: 'darkred', // Color when hovered
+                    },
+                  }}
                 >
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
-                </Typography>
-              </CardContent>
-            </Card>
+                  <DeleteIcon />
+                </IconButton>
+            </Card> 
           ))}
         </Stack>
       </Box>
